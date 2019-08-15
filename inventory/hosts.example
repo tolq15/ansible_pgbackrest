@@ -1,0 +1,29 @@
+[hosts]
+backupsrv ansible_host=192.168.56.22
+db01 ansible_host=192.168.56.23
+db02 ansible_host=192.168.56.24
+restoresrv ansible_host=192.168.56.25
+
+[dbserver]
+db01
+db02
+
+[bckserver]
+backupsrv
+
+[rstserver]
+restoresrv
+
+[apt:children]
+pgsql
+
+[ssh:children]
+hosts
+
+[pgsql:children]
+dbserver
+bckserver
+rstserver
+
+[pgbackrest:children]
+pgsql

@@ -1,0 +1,129 @@
+---
+pg_home_dir: "/home/postgres"
+pg_shell: "/bin/bash"
+pg_osuser: "postgres"
+pg_osgroup: "postgres"
+pg_additional_groups:
+  - "ssl-cert"
+
+pgdg_codename:
+  ascii: stretch
+
+common_packages:
+  - postgresql-client-common
+  - postgresql-common
+  - pgbackrest
+  - python-psycopg2
+  - locales
+  - mutt
+
+create_main_cluster: No
+
+pgsql_packages:
+- postgresql-
+- postgresql-client-
+- postgresql-contrib-
+
+
+postgresql_common_include: "/etc/postgresql-common/createcluster.d"
+
+
+pg_backrest:
+  backup_server: backupsrv
+  primary: db01
+  secondary: db02
+  repository: /pg_backrest/
+  recovery_option:
+    - "standby_mode=on"
+
+
+  log_rotate:
+    mode: "daily"
+    keep: "31"
+
+
+pgbackrest_conf: "/etc/pgbackrest.conf"
+
+pg_super_user: "postgres"
+# The pg_super_password is "flynn_lives". The vault password is "postgres".
+# You may want to change this with a pair of stronger database and vault passwords
+# Check https://docs.ansible.com/ansible/2.5/user_guide/vault.html for vault's usage
+pg_super_password: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          30313235613232653662306165306430383737646461333032303063373238646334363265326162
+          6136636134383332336562386464363735323233656337620a663961343239303131316266346431
+          39633032333035613331313136313962626634656637656431346436626532303266653333313435
+          3134633031373431620a623937386564346538663062643936353432643835383965616539623731
+          3639
+
+smtp_username: foo@bar.local
+smtp_password: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          31323834643366356363313035643263333738393537353730306361303534656435323639333365
+          3432393736313835653264353332373464333337373964630a363164366635323162666434633961
+          63643435366632363033616666363635656537353066326537613066616261306663613731323966
+          3232643235643263390a396632386461613932616262346430636538353864316637366334353634
+          34343339386438613332306639323366393265363736636630376436343965636366
+
+smtp_recipients:
+  - info@foo.bar
+  - foo@bar.local
+
+logrotate_pgsql: "/etc/logrotate.d/pgsql_custom"
+logrotate_pgbackrest: "/etc/logrotate.d/pgbackrest_custom"
+default_locale: "en_GB.UTF-8"
+
+pg_dirs:
+  data_area: "/var/lib/postgresql"
+  log_directory: "/var/log/postgresql"
+  wal_area: "/var/lib/postgresql/pg_wal"
+
+log_rotate:
+  mode: "weekly"
+  keep: "10"
+
+start_mode: auto
+
+pg_clusters:
+  tron:
+    pg_dirs:
+      data_area: "/pg_data"
+      log_directory: "/pg_log"
+    version: "11"
+    locale: "en_US.UTF-8"
+    params:
+      port: "5432"
+      listen_addresses: "*"
+    data_area: "/pg_data"
+    log_directory: "/pg_log"
+    log_rotate:
+      mode: "daily"
+      keep: "31"
+  clu:
+    version: "9.6"
+    params:
+      port: "5433"
+      listen_addresses: "*"
+      wal_level: "logical"
+      hot_standby: "on"
+  sark:
+    version: "10"
+    params:
+      port: "5434"
+      listen_addresses: "*"
+      wal_level: "replica"
+
+cron_config:
+  all:
+    - name: "backup full on sunday"
+      weekday: 0
+      minute: 15
+      hour: 20
+      job: "{{ pg_home_dir }}/run_backup.sh full"
+      user: "{{ pg_osuser }}"
+    - name: "incremental backup monday to saturday"
+      weekday: 1-6
+      minute: 15
+      hour: 20
+      job: "{{ pg_home_dir }}/run_backup.sh incr"
+      user: "{{ pg_osuser }}"

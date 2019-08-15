@@ -1,0 +1,6 @@
+---
+- hosts: hosts
+  roles:
+    - rollback
+  remote_user: ansible
+  become: yes

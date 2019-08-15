@@ -1,0 +1,25 @@
+---
+- hosts: apt
+  roles:
+    - hosts
+    - apt
+  remote_user: ansible
+  become: yes
+
+- hosts: ssh
+  roles:
+    - ssh
+  remote_user: ansible
+  become: yes
+
+- hosts: dbserver,rstserver
+  roles:
+    - pgsql
+  remote_user: ansible
+  become: yes
+
+- hosts: pgbackrest
+  roles:
+    - pgbackrest
+  remote_user: ansible
+  become: yes

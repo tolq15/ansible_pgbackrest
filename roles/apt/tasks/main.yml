@@ -1,0 +1,79 @@
+---
+- name: Ensure group {{ pg_osgroup }} exists
+  group:
+    name: "{{ pg_osgroup }}"
+    state: present
+
+- name: create the {{ pg_osuser }} user and the home directory
+  user:
+    name: "{{ pg_osuser }}"
+    group: "{{ pg_osgroup }}"
+    groups: "{{ pg_additional_groups }}"
+    create_home: yes
+    move_home: yes
+    home: "{{ pg_home_dir }}"
+    shell: "{{ pg_shell }}"
+    system: yes
+    state: present
+
+- name: Set the codename to the pgdg_codename translation or the lsb_release, whether it comes first
+  set_fact:
+    codename: "{{ pgdg_codename[ansible_lsb['codename']] | default(ansible_lsb['codename'])  }}"
+
+- name: Add the postgresql key to the apt repository
+  apt_key: url="https://www.postgresql.org/media/keys/ACCC4CF8.asc" state=present
+
+- name: add postgresql repository
+  apt_repository:
+    repo: "deb http://apt.postgresql.org/pub/repos/apt/ {{ codename }}-pgdg main"
+    state: present
+
+- name: install common packages
+  apt:
+    name: "{{ common_packages }}"
+    update_cache: yes
+    cache_valid_time: 86400
+
+
+- name: create include directory for createcluster
+  file:
+    path: "{{ postgresql_common_include }}"
+    owner: "{{ pg_osuser }}"
+    group: "{{ pg_osgroup }}"
+    state: directory
+    mode: 0744
+
+- name: add create main_cluster line in custom configuration using the variable create_main_cluster
+  lineinfile:
+    path: "{{postgresql_common_include}}/main_cluster.conf"
+    line: "create_main_cluster = {{ create_main_cluster }}"
+    create: Yes
+    owner: "{{ pg_osuser }}"
+    group: "{{ pg_osgroup }}"
+    mode: 0744
+
+- name: build a list of postgresql major versions from the dictionary pg_clusters
+  set_fact:
+    pgsql_versions: "{{ (pgsql_versions|default([])  +  [item.value.version])|unique }}"
+  with_dict: "{{ pg_clusters }}"
+
+
+- name: install postgresql versioned packages
+  apt:
+    name: "{{ item.0 }}{{ item.1 }}"
+    update_cache: yes
+    cache_valid_time: 86400
+  with_nested:
+    - "{{ pgsql_packages }}"
+    - "{{ pgsql_versions }}"
+
+- name: build a list of encoding to be installed on the server
+  set_fact:
+    db_locale: "{{ (db_locale|default([])  +  [item.value.locale|default(default_locale)])|unique }}"
+  with_dict: "{{ pg_clusters }}"
+
+- name: Ensure the locale required by the clusters exists
+  locale_gen:
+    name: "{{ item }}"
+    state: present
+  with_items: "{{ db_locale }}"

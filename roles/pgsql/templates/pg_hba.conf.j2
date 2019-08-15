@@ -1,0 +1,4 @@
+{% set cluster_hba = item.value.pg_hba|default(pg_hba) %}
+{%for hba in cluster_hba %}
+{{ hba.type }}   {{ hba.database }}  {{ hba.user }} {{ hba.address }} {{ hba.method }}
+{% endfor %}
