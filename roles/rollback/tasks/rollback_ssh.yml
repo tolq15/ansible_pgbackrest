@@ -1,5 +1,0 @@
----
-- name: remove the ssh directory in the postgres user
-  file:
-    path: "{{ pg_home_dir }}/.ssh"
-    state: absent
