@@ -30,6 +30,10 @@
   with_dict: "{{ pg_clusters }}"
 
 
+#
+# LT: Execute init_cluster.yml for each cluster in pg_clusters
+#     Use 'db_cluster' as 'item' inside yml file.
+#
 - name: Initialise the postgresql clusters using an include
   include: init_cluster.yml
   with_dict: "{{ pg_clusters }}"
@@ -74,6 +78,14 @@
   with_dict: "{{ pg_clusters}}"
 
 
+#
+# LT: Setup PG parameters in postgresql.conf
+#     to work with pgbackrest.
+#     See also
+#     roles/pgsql/templates/postgresql_pgbackrest.conf.j2
+#     and
+#     inventory/group_vars/all line 87 (pg_clusters)
+#
 - name: Ship the custom pgbackrest.conf in conf.d
   template:
     src: postgresql_pgbackrest.conf.j2

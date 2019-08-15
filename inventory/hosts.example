@@ -1,7 +1,7 @@
 [hosts]
-backupsrv ansible_host=192.168.56.22
-db01 ansible_host=192.168.56.23
-db02 ansible_host=192.168.56.24
+backupsrv  ansible_host=192.168.56.22
+db01       ansible_host=192.168.56.23
+db02       ansible_host=192.168.56.24
 restoresrv ansible_host=192.168.56.25
 
 [dbserver]
